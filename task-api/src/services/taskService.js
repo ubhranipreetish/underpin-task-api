@@ -1,16 +1,29 @@
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('node:crypto');
 
 let tasks = [];
 
-const getAll = () => [...tasks];
+const EDITABLE_FIELDS = [
+  'title',
+  'description',
+  'status',
+  'priority',
+  'dueDate',
+];
 
-const findById = (id) => tasks.find((t) => t.id === id);
+const getAll = () => tasks.map((task) => ({ ...task }));
 
-const getByStatus = (status) => tasks.filter((t) => t.status.includes(status));
+const findById = (id) => {
+  const task = tasks.find((task) => task.id === id);
+  return task ? { ...task } : undefined;
+};
 
-const getPaginated = (page, limit) => {
-  const offset = page * limit;
-  return tasks.slice(offset, offset + limit);
+const getByStatus = (status) =>
+  tasks.filter((task) => task.status === status).map((task) => ({ ...task }));
+
+const getPaginated = (page, limit, status) => {
+  const matching = status === undefined ? getAll() : getByStatus(status);
+  const offset = (page - 1) * limit;
+  return matching.slice(offset, offset + limit);
 };
 
 const getStats = () => {
@@ -19,7 +32,7 @@ const getStats = () => {
   let overdue = 0;
 
   tasks.forEach((t) => {
-    if (counts[t.status] !== undefined) counts[t.status]++;
+    counts[t.status]++;
     if (t.dueDate && t.status !== 'done' && new Date(t.dueDate) < now) {
       overdue++;
     }
@@ -28,28 +41,44 @@ const getStats = () => {
   return { ...counts, overdue };
 };
 
-const create = ({ title, description = '', status = 'todo', priority = 'medium', dueDate = null }) => {
+const create = ({
+  title,
+  description = '',
+  status = 'todo',
+  priority = 'medium',
+  dueDate = null,
+}) => {
+  const now = new Date().toISOString();
   const task = {
-    id: uuidv4(),
+    id: randomUUID(),
     title,
     description,
     status,
     priority,
     dueDate,
-    completedAt: null,
-    createdAt: new Date().toISOString(),
+    assignee: null,
+    completedAt: status === 'done' ? now : null,
+    createdAt: now,
   };
   tasks.push(task);
-  return task;
+  return { ...task };
 };
 
 const update = (id, fields) => {
   const index = tasks.findIndex((t) => t.id === id);
   if (index === -1) return null;
 
-  const updated = { ...tasks[index], ...fields };
+  const editable = Object.fromEntries(
+    Object.entries(fields).filter(([field]) => EDITABLE_FIELDS.includes(field)),
+  );
+  const updated = { ...tasks[index], ...editable };
+  // Reopening clears completion time; repeated completion preserves the first timestamp.
+  updated.completedAt =
+    updated.status === 'done'
+      ? tasks[index].completedAt || new Date().toISOString()
+      : null;
   tasks[index] = updated;
-  return updated;
+  return { ...updated };
 };
 
 const remove = (id) => {
@@ -60,20 +89,15 @@ const remove = (id) => {
   return true;
 };
 
-const completeTask = (id) => {
-  const task = findById(id);
-  if (!task) return null;
+const completeTask = (id) => update(id, { status: 'done' });
 
-  const updated = {
-    ...task,
-    priority: 'medium',
-    status: 'done',
-    completedAt: new Date().toISOString(),
-  };
-
+const assignTask = (id, assignee) => {
   const index = tasks.findIndex((t) => t.id === id);
+  if (index === -1) return null;
+
+  const updated = { ...tasks[index], assignee: assignee.trim() };
   tasks[index] = updated;
-  return updated;
+  return { ...updated };
 };
 
 const _reset = () => {
@@ -90,5 +114,6 @@ module.exports = {
   update,
   remove,
   completeTask,
+  assignTask,
   _reset,
 };
