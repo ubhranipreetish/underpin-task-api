@@ -1,0 +1,59 @@
+name: API checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests and coverage (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    defaults:
+      run:
+        working-directory: task-api
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: task-api/package-lock.json
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Test and enforce coverage
+        run: npm run test:ci
+      - name: Write coverage summary
+        if: always()
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const file = 'coverage/coverage-summary.json';
+          if (!fs.existsSync(file)) process.exit(0);
+          const { total } = JSON.parse(fs.readFileSync(file, 'utf8'));
+          const rows = ['### Coverage', '', '| Metric | Coverage | Required |', '| --- | ---: | ---: |'];
+          for (const metric of ['statements', 'branches', 'functions', 'lines']) {
+            rows.push(`| ${metric} | ${total[metric].pct}% | 95% |`);
+          }
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${rows.join('\n')}\n`);
+          NODE
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-node-${{ matrix.node }}
+          path: task-api/coverage/
+          retention-days: 14
+          if-no-files-found: warn

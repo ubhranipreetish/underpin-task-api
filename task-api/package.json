@@ -3,17 +3,20 @@
   "version": "1.0.0",
   "description": "Task Manager API",
   "main": "src/app.js",
+  "engines": {
+    "node": "22.x || 24.x"
+  },
   "scripts": {
     "start": "node src/app.js",
     "test": "jest",
-    "coverage": "jest --coverage"
+    "coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --runInBand"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "uuid": "^9.0.0"
+    "express": "^4.22.3"
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "supertest": "^6.3.4"
+    "supertest": "^7.3.0"
   }
 }
