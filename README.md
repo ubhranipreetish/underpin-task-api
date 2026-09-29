@@ -1,5 +1,9 @@
 # Task Manager API — The Untested API
 
+- **Live API:** https://underpin-task-api-perw.onrender.com/
+- **GitHub:** https://github.com/ubhranipreetish/underpin-task-api
+- **CI:** [Passing verification run](https://github.com/ubhranipreetish/underpin-task-api/actions/runs/36621235314)
+
 A tested Express API for creating, updating, completing, and assigning tasks. The submission keeps the starter's in-memory architecture and adds regression coverage, fixes for the identified defects, and automated CI.
 
 - [Original assignment](ASSIGNMENT.md)

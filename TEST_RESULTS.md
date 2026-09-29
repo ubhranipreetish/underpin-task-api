@@ -1,6 +1,6 @@
 # Verification results
 
-Verified locally on 2026-09-28. These results describe local runs; hosted GitHub Actions and the public deployment have not run yet.
+Verified locally on 2026-09-28. GitHub Actions and the public deployment were also checked on 2026-09-30; the hosted verification scope is recorded below.
 
 ## Automated tests
 
@@ -59,4 +59,16 @@ The complete HTML report is generated at `task-api/coverage/lcov-report/index.ht
 
 ## Publication status
 
-The submission is prepared on branch `submission/tested-task-api`. Publishing awaits the GitHub account and hosting selection. No public live URL or hosted CI result is claimed in this local report.
+The submission is published on branch `main` in the [public GitHub repository](https://github.com/ubhranipreetish/underpin-task-api).
+
+- [GitHub Actions run](https://github.com/ubhranipreetish/underpin-task-api/actions/runs/36621235314): completed successfully for commit `25bc73a`.
+- [Live API](https://underpin-task-api-perw.onrender.com/): read-only deployment checks passed on 2026-09-30.
+
+| Endpoint | HTTP status | Observed response |
+| --- | --- | --- |
+| `/` | 200 | Service information and endpoint list |
+| `/health` | 200 | `{ "status": "ok" }` |
+| `/tasks` | 200 | Empty task array |
+| `/tasks/stats` | 200 | All four counters were zero |
+
+These public checks did not create or modify tasks. The complete mutation workflow was verified locally as described above; it was not replayed against the hosted service during this check.
